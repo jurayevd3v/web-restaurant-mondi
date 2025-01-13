@@ -33,9 +33,9 @@ const start = async () => {
     });
 
     const config = new DocumentBuilder()
-      .setTitle('Darxon')
+      .setTitle('Mondi')
       .setDescription('jurayevdev')
-      .setVersion('7.3.1')
+      .setVersion('0.0.1')
       .addTag('NodeJs, NestJs, Postgres, Sequalize')
       .build();
 
