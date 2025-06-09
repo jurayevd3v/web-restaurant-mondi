@@ -20,6 +20,16 @@ export class CommentsService {
       const comment = await this.repo.findAll();
       return comment;
     }
+
+    async getComment() {
+      const comment = await this.repo.findAll({where: {target_type: 'restaurant'}});
+      return comment;
+    }
+
+    async getEmployeeComment() {
+      const comment = await this.repo.findAll({where: {target_type: 'employee'}});
+      return comment;
+    }
   
     async paginate(page: number): Promise<object> {
       try {

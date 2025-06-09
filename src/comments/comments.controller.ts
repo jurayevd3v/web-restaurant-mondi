@@ -37,6 +37,22 @@ export class CommentsController {
     return this.commentsService.getAll();
   }
 
+  @ApiOperation({ summary: 'Comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get()
+  async getComment() {
+    return this.commentsService.getComment();
+  }
+
+  @ApiOperation({ summary: 'Comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get()
+  async getEmployeeComment() {
+    return this.commentsService.getEmployeeComment();
+  }
+
   @ApiOperation({ summary: 'Paginate menu' })
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
