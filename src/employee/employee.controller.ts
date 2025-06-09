@@ -38,7 +38,7 @@ export class EmployeeController {
   }
 
   @ApiOperation({ summary: 'Paginate menu' })
-  @Get(':page')
+  @Get('/page/:page')
   paginate(@Query('page') page: number) {
     return this.employeeService.paginate(page);
   }

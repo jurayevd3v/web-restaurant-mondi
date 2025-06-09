@@ -56,7 +56,7 @@ export class CommentsController {
   @ApiOperation({ summary: 'Paginate menu' })
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  @Get(':page')
+  @Get('/page/:page')
   paginate(@Query('page') page: number) {
     return this.commentsService.paginate(page);
   }
