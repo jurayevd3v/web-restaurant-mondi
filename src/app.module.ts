@@ -14,6 +14,10 @@ import { CategoryModule } from './category/category.module';
 import { MenuModule } from './menu/menu.module';
 import { Category } from './category/models/category.model';
 import { Menu } from './menu/models/menu.model';
+import { EmployeeModule } from './employee/employee.module';
+import { CommentsModule } from './comments/comments.module';
+import { Employee } from './employee/models/employee.model';
+import { Comment } from './comments/models/comment.model';
 
 
 @Module({
@@ -26,7 +30,7 @@ import { Menu } from './menu/models/menu.model';
       username: process.env.POSTGRES_USER,
       password: String(process.env.POSTGRES_PASS),
       database: process.env.POSTGRES_DB,
-      models: [Admin, Background, Category, Menu],
+      models: [Admin, Background, Category, Menu, Employee, Comment],
       autoLoadModels: true,
       logging: false,
     }),
@@ -39,6 +43,8 @@ import { Menu } from './menu/models/menu.model';
     BackgroundModule,
     CategoryModule,
     MenuModule,
+    EmployeeModule,
+    CommentsModule,
   ],
   controllers: [],
   providers: [],
