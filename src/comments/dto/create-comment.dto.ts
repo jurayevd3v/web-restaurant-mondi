@@ -14,7 +14,6 @@ export class CreateCommentDto {
   target_type: 'restaurant' | 'employee';
 
   @ApiProperty({example: 1, description: 'Employee ID'})
-  @IsString()
   target_id: number;
 
   @ApiProperty({example: 'John Doe', description: 'Customer full name'})
