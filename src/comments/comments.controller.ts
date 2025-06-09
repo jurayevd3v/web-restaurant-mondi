@@ -40,7 +40,7 @@ export class CommentsController {
   @ApiOperation({ summary: 'Comment view all' })
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  @Get()
+  @Get('/comment')
   async getComment() {
     return this.commentsService.getComment();
   }
@@ -48,7 +48,7 @@ export class CommentsController {
   @ApiOperation({ summary: 'Comment view all' })
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  @Get()
+  @Get('employee-comment')
   async getEmployeeComment() {
     return this.commentsService.getEmployeeComment();
   }
