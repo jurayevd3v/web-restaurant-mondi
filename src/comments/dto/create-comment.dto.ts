@@ -17,7 +17,6 @@ export class CreateCommentDto {
   target_id: number;
 
   @ApiProperty({example: 'John Doe', description: 'Customer full name'})
-  @IsString()
   full_name: string;
 
   @ApiProperty({example: 'Comment', description: 'Customer comment'})
