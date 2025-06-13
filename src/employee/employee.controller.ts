@@ -64,4 +64,44 @@ export class EmployeeController {
   async update(@Param('id') id: string, @Body() updateDto: UpdateEmployeeDto) {
     return this.employeeService.update(+id, updateDto);
   }
+
+  @ApiOperation({ summary: 'Employee filter by comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('day/:day')
+  async getDay(
+    @Param('day') day: string,
+  ) {
+    return this.employeeService.getDay(day);
+  }
+
+  @ApiOperation({ summary: 'Employee filter by comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('week/:day')
+  async getWeek(
+    @Param('day') day: string,
+  ) {
+    return this.employeeService.getWeek(day);
+  }
+
+  @ApiOperation({ summary: 'Employee filter by comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('month/:month')
+  async getMonth(
+    @Param('month') month: string,
+  ) {
+    return this.employeeService.getMonth(month);
+  }
+
+  @ApiOperation({ summary: 'Employee filter by comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('year/:year')
+  async getYear(
+    @Param('year') year: string,
+  ) {
+    return this.employeeService.getYear(year);
+  }
 }
