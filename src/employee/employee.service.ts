@@ -23,13 +23,17 @@ export class EmployeeService {
     });
     const employeesWithRatings = employees.map((emp) => {
       const comments = emp.comments || [];
+      const totalComments = comments.length;
       const totalRating = comments.reduce(
         (sum, comment) => sum + comment.rating,
         0,
       );
+      const avgRating =
+        totalComments > 0 ? (totalRating / totalComments).toFixed(2) : 0;
+
       return {
         ...emp.toJSON(),
-        totalRating,
+        totalRating: avgRating,
       };
     });
 
