@@ -40,7 +40,7 @@ export class CommentsController {
   @ApiOperation({ summary: 'Comment view all' })
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  @Get('/comment')
+  @Get('comment')
   async getComment() {
     return this.commentsService.getComment();
   }
@@ -48,9 +48,9 @@ export class CommentsController {
   @ApiOperation({ summary: 'Comment view all' })
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  @Get('employee-comment')
-  async getEmployeeComment() {
-    return this.commentsService.getEmployeeComment();
+  @Get('employee/:id')
+  async getEmployeeComment(@Param('id') id: string) {
+    return this.commentsService.getEmployeeComment(+id);
   }
 
   @ApiOperation({ summary: 'Paginate menu' })
@@ -83,5 +83,81 @@ export class CommentsController {
   @Put(':id')
   async update(@Param('id') id: string, @Body() updateDto: UpdateCommentDto) {
     return this.commentsService.update(+id, updateDto);
+  }
+
+  @ApiOperation({ summary: 'Comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('comment-day/:day')
+  async getCommentDay(@Param('day') day: string) {
+    return this.commentsService.getCommentDay(day);
+  }
+
+  @ApiOperation({ summary: 'Comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('comment-week/:day')
+  async getCommentWeek(@Param('day') day: string) {
+    return this.commentsService.getCommentWeek(day);
+  }
+
+  @ApiOperation({ summary: 'Comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('comment-month/:month')
+  async getCommentMonth(@Param('month') month: string) {
+    return this.commentsService.getCommentMonth(month);
+  }
+
+  @ApiOperation({ summary: 'Comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('comment-year/:year')
+  async getCommentYear(@Param('year') year: string) {
+    return this.commentsService.getCommentYear(year);
+  }
+
+  @ApiOperation({ summary: 'Comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('employee-day/:id/:day')
+  async getEmployeeCommentDay(
+    @Param('id') id: string,
+    @Param('day') day: string,
+  ) {
+    return this.commentsService.getEmployeeCommentDay(+id, day);
+  }
+
+  @ApiOperation({ summary: 'Comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('employee-week/:id/:day')
+  async getEmployeeCommentWeek(
+    @Param('id') id: string,
+    @Param('day') day: string,
+  ) {
+    return this.commentsService.getEmployeeCommentWeek(+id, day);
+  }
+
+  @ApiOperation({ summary: 'Comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('employee-month/:id/:month')
+  async getEmployeeCommentMonth(
+    @Param('id') id: string,
+    @Param('month') month: string,
+  ) {
+    return this.commentsService.getEmployeeCommentMonth(+id, month);
+  }
+
+  @ApiOperation({ summary: 'Comment view all' })
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Get('employee-year/:id/:year')
+  async getEmployeeCommentYear(
+    @Param('id') id: string,
+    @Param('year') year: string,
+  ) {
+    return this.commentsService.getEmployeeCommentYear(+id, year);
   }
 }
