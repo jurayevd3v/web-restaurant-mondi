@@ -1,7 +1,7 @@
 import { Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
 import { Comment } from 'src/comments/models/comment.model';
 
-interface EmployeeAttr {
+export interface EmployeeAttr {
   full_name: string;
   birthday: string;
   phone_number: string;
@@ -42,6 +42,6 @@ export class Employee extends Model<Employee, EmployeeAttr> {
   })
   role: string;
 
-    @HasMany(() => Comment, { onDelete: 'CASCADE' })
-    comments: Comment[];
+  @HasMany(() => Comment, { onDelete: 'CASCADE' })
+  comments: Comment[];
 }

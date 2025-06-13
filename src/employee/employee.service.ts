@@ -21,28 +21,19 @@ export class EmployeeService {
     const employees = await this.repo.findAll({
       include: [{ model: Comment }],
     });
+    const employeesWithRatings = employees.map((emp) => {
+      const comments = emp.comments || [];
+      const totalRating = comments.reduce(
+        (sum, comment) => sum + comment.rating,
+        0,
+      );
+      return {
+        ...emp.toJSON(),
+        totalRating,
+      };
+    });
 
-    let totalRating = 0;
-    let totalComments = 0;
-
-    for (const emp of employees) {
-      if (emp.comments && emp.comments.length) {
-        totalComments += emp.comments.length;
-        totalRating += emp.comments.reduce(
-          (sum, comment) => sum + comment.rating,
-          0,
-        );
-      }
-    }
-
-    const avgRating = totalComments > 0 ? totalRating / totalComments : 0;
-
-    return {
-      employees,
-      totalRating,
-      totalComments,
-      avgRating: +avgRating.toFixed(2),
-    };
+    return employeesWithRatings;
   }
 
   async paginate(page: number): Promise<object> {
