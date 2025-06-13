@@ -43,5 +43,5 @@ export class Employee extends Model<Employee, EmployeeAttr> {
   role: string;
 
     @HasMany(() => Comment, { onDelete: 'CASCADE' })
-    comments: Comment;
+    comments: Comment[];
 }

@@ -3,6 +3,7 @@ import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { InjectModel } from '@nestjs/sequelize';
 import { Employee } from './models/employee.model';
+import { Comment } from 'src/comments/models/comment.model';
 
 @Injectable()
 export class EmployeeService {
@@ -17,8 +18,31 @@ export class EmployeeService {
   }
 
   async getAll() {
-    const employee = await this.repo.findAll();
-    return employee;
+    const employees = await this.repo.findAll({
+      include: [{ model: Comment }],
+    });
+
+    let totalRating = 0;
+    let totalComments = 0;
+
+    for (const emp of employees) {
+      if (emp.comments && emp.comments.length) {
+        totalComments += emp.comments.length;
+        totalRating += emp.comments.reduce(
+          (sum, comment) => sum + comment.rating,
+          0,
+        );
+      }
+    }
+
+    const avgRating = totalComments > 0 ? totalRating / totalComments : 0;
+
+    return {
+      employees,
+      totalRating,
+      totalComments,
+      avgRating: +avgRating.toFixed(2),
+    };
   }
 
   async paginate(page: number): Promise<object> {
@@ -68,7 +92,7 @@ export class EmployeeService {
   }
 
   async update(id: number, updateDto: UpdateEmployeeDto) {
-  const employee = await this.repo.update(updateDto, {
+    const employee = await this.repo.update(updateDto, {
       where: { id },
     });
     return {
