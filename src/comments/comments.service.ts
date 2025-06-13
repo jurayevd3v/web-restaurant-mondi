@@ -23,12 +23,12 @@ export class CommentsService {
   }
 
   async getComment() {
-    const comment = await this.repo.findAll({
+    const comments = await this.repo.findAll({
       where: { target_type: 'restaurant' },
     });
 
-    const totalComments = comment.length;
-    const totalRating = comment.reduce(
+    const totalComments = comments.length;
+    const totalRating = comments.reduce(
       (sum, comment) => sum + comment.rating,
       0,
     );
@@ -39,16 +39,16 @@ export class CommentsService {
       totalComments,
       totalRating,
       avgRating,
-      comment,
+      comments,
     };
   }
 
   async getEmployeeComment(id: number) {
-    const comment = await this.repo.findAll({
+    const comments = await this.repo.findAll({
       where: { target_type: 'employee', target_id: id },
     });
-    const totalComments = comment.length;
-    const totalRating = comment.reduce(
+    const totalComments = comments.length;
+    const totalRating = comments.reduce(
       (sum, comment) => sum + comment.rating,
       0,
     );
@@ -59,7 +59,7 @@ export class CommentsService {
       totalComments,
       totalRating,
       avgRating,
-      comment,
+      comments,
     };
   }
 
