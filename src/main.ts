@@ -1,4 +1,4 @@
-import * as crypto from 'crypto'; // 🔧 ADD THIS
+import * as crypto from 'crypto';
 if (!(global as any).crypto) {
   (global as any).crypto = crypto;
 }
@@ -77,5 +77,47 @@ const start = async () => {
         return;
       }
 
-      const origin = (req.headers.origin || req.headers.referer || '') as string;
-      const originAllowed = allowedOrigins.some((o) =>
+      const origin = (req.headers.origin ||
+        req.headers.referer ||
+        '') as string;
+
+      // So'rov kelgan manzil ruxsat etilganlar ro'yxatida borligini tekshirish
+      const originAllowed = allowedOrigins.some((o) => origin.startsWith(o));
+
+      if (originAllowed) {
+        next();
+      } else {
+        swaggerLogger.warn(`Blocked Swagger access from origin: ${origin}`);
+        res
+          .status(403)
+          .send('Forbidden: Access to Swagger documentation is restricted.');
+      }
+    };
+
+    // Swagger guard'ni faqat hujjatlar yo'liga qo'llaymiz
+    app.use('/api/docs', swaggerGuard);
+
+    // Swagger sozlamalari
+    const config = new DocumentBuilder()
+      .setTitle('Darxon API')
+      .setDescription('The Darxon API documentation')
+      .setVersion('0.0.1')
+      .addBearerAuth()
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+
+    // Serverni ishga tushirish
+    await app.listen(PORT);
+    appLogger.log(`Application is running on: http://localhost:${PORT}/api`);
+    appLogger.log(
+      `Swagger documentation available at: http://localhost:${PORT}/api/docs`,
+    );
+  } catch (error) {
+    console.error('Error starting server:', error);
+    process.exit(1);
+  }
+};
+
+start();
