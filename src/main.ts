@@ -1,16 +1,54 @@
+import * as crypto from 'crypto'; // 🔧 ADD THIS
+if (!(global as any).crypto) {
+  (global as any).crypto = crypto;
+}
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Request, Response, NextFunction } from 'express';
 
 const start = async () => {
   try {
     const app = await NestFactory.create(AppModule, { cors: true });
-    
+
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    const isProd = nodeEnv === 'production';
+
+    // .env: ALLOWED_ORIGINS=https://example.uz,https://admin.example.uz
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
+
+    const corsLogger = new Logger('CORS');
+    const swaggerLogger = new Logger('Swagger');
+    const appLogger = new Logger('Bootstrap');
+
+    appLogger.log(`Allowed origins: ${JSON.stringify(allowedOrigins)}`);
+
     app.enableCors({
-      origin: true,
-      methods: 'GET, HEAD, PUT, PATCH, DELETE, OPTIONS',
+      origin: (origin, callback) => {
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+
+        if (!isProd && allowedOrigins.length === 0) {
+          callback(null, true);
+          return;
+        }
+
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          corsLogger.warn(`Blocked origin: ${origin}`);
+          callback(new Error(`CORS policy: origin '${origin}' is not allowed`));
+        }
+      },
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
     });
@@ -22,7 +60,7 @@ const start = async () => {
     app.useGlobalPipes(new ValidationPipe());
     app.use((req, res, next) => {
       const startTime = Date.now();
-      res.on('finish', () => {``
+      res.on('finish', () => {
         const endTime = Date.now();
         const responseTime = endTime - startTime;
         console.log(
@@ -32,22 +70,12 @@ const start = async () => {
       next();
     });
 
-    const config = new DocumentBuilder()
-      .setTitle('Mondi')
-      .setDescription('jurayevdev')
-      .setVersion('0.0.1')
-      .addTag('NodeJs, NestJs, Postgres, Sequalize')
-      .build();
+    // === SWAGGER: faqat ruxsat etilgan originlar uchun ochiq ===
+    const swaggerGuard = (req: Request, res: Response, next: NextFunction) => {
+      if (!isProd && allowedOrigins.length === 0) {
+        next();
+        return;
+      }
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('/api/docs', app, document);
-
-    app.listen(PORT, () => {
-      console.log(`${PORT} --- portda server ishga tushdi`);
-    });
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-start();
+      const origin = (req.headers.origin || req.headers.referer || '') as string;
+      const originAllowed = allowedOrigins.some((o) =>
