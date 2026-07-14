@@ -103,6 +103,14 @@ const start = async () => {
       .setDescription('The Darxon API documentation')
       .setVersion('0.0.1')
       .addBearerAuth()
+      .addApiKey(
+        {
+          type: 'apiKey',
+          name: 'x-admin-secret',
+          in: 'header',
+        },
+        'admin-secret', // shu nom bilan controllerda ishlatamiz
+      )
       .build();
 
     const document = SwaggerModule.createDocument(app, config);

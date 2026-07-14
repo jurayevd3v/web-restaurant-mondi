@@ -11,7 +11,7 @@ import {
   UseGuards,
   Put,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { CookieGetter } from '../decorators/cookieGetter.decorator';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -22,6 +22,7 @@ import { AdminCreateDto } from './dto/admin-create.dto';
 import { AdminLoginDto } from './dto/admin-login.dto';
 import { Admin } from './models/admin.model';
 import { ADminUpdateDto } from './dto/admin-update.dto';
+import { AdminSecretGuard } from 'src/guards/admin-secret.guard';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -29,6 +30,8 @@ export class AdminController {
   constructor(private readonly service: AdminService) {}
 
   @ApiOperation({ summary: 'Admin create' })
+  @ApiSecurity('admin-secret')
+  @UseGuards(AdminSecretGuard)
   @Post('create')
   async create(
     @Body() createDto: AdminCreateDto,
