@@ -8,7 +8,6 @@ import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Request, Response, NextFunction } from 'express';
 
 const start = async () => {
   try {
@@ -24,7 +23,6 @@ const start = async () => {
       .filter(Boolean);
 
     const corsLogger = new Logger('CORS');
-    const swaggerLogger = new Logger('Swagger');
     const appLogger = new Logger('Bootstrap');
 
     appLogger.log(`Allowed origins: ${JSON.stringify(allowedOrigins)}`);
@@ -70,34 +68,7 @@ const start = async () => {
       next();
     });
 
-    // === SWAGGER: faqat ruxsat etilgan originlar uchun ochiq ===
-    const swaggerGuard = (req: Request, res: Response, next: NextFunction) => {
-      if (!isProd && allowedOrigins.length === 0) {
-        next();
-        return;
-      }
-
-      const origin = (req.headers.origin ||
-        req.headers.referer ||
-        '') as string;
-
-      // So'rov kelgan manzil ruxsat etilganlar ro'yxatida borligini tekshirish
-      const originAllowed = allowedOrigins.some((o) => origin.startsWith(o));
-
-      if (originAllowed) {
-        next();
-      } else {
-        swaggerLogger.warn(`Blocked Swagger access from origin: ${origin}`);
-        res
-          .status(403)
-          .send('Forbidden: Access to Swagger documentation is restricted.');
-      }
-    };
-
-    // Swagger guard'ni faqat hujjatlar yo'liga qo'llaymiz
-    app.use('/api/docs', swaggerGuard);
-
-    // Swagger sozlamalari
+    // === SWAGGER: har doim ochiq ===
     const config = new DocumentBuilder()
       .setTitle('Darxon API')
       .setDescription('The Darxon API documentation')
