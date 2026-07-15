@@ -11,7 +11,7 @@ import {
     UseInterceptors,
     UploadedFile,
   } from '@nestjs/common';
-  import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+  import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
   import { Roles } from '../decorators/roles-auth-decorator';
   import { RolesGuard } from '../guards/roles.guard';
   import { FileInterceptor } from '@nestjs/platform-express';
@@ -26,6 +26,7 @@ import { Background } from './models/background.model';
     constructor(private readonly service: BackgroundService) {}
   
     @ApiOperation({ summary: "Background create" })
+    @ApiBearerAuth()
     @Roles('ADMIN')
     @UseGuards(RolesGuard)
     @Post()
@@ -50,6 +51,7 @@ import { Background } from './models/background.model';
     }
   
     @ApiOperation({ summary: "Background delete by ID" })
+    @ApiBearerAuth()
     @Roles('ADMIN')
     @UseGuards(RolesGuard)
     @Delete(':id')

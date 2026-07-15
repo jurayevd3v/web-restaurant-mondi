@@ -13,7 +13,7 @@ import {
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/decorators/roles-auth-decorator';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { Comment } from './models/comment.model';
@@ -30,6 +30,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get()
@@ -38,6 +39,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('comment')
@@ -46,6 +48,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('employee/:id')
@@ -54,6 +57,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Paginate menu' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('/page/:page')
@@ -62,6 +66,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view by ID' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get(':id')
@@ -70,6 +75,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment delete by ID' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Delete(':id')
@@ -78,6 +84,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment update by ID' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Put(':id')
@@ -86,6 +93,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('comment-day/:day')
@@ -94,6 +102,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('comment-week/:day')
@@ -102,6 +111,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('comment-month/:month')
@@ -110,6 +120,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('comment-year/:year')
@@ -118,6 +129,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('employee-day/:id/:day')
@@ -129,6 +141,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('employee-week/:id/:day')
@@ -140,6 +153,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('employee-month/:id/:month')
@@ -151,6 +165,7 @@ export class CommentsController {
   }
 
   @ApiOperation({ summary: 'Comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('employee-year/:id/:year')

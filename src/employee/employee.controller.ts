@@ -13,7 +13,7 @@ import {
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/decorators/roles-auth-decorator';
 import { Employee } from './models/employee.model';
@@ -24,6 +24,7 @@ export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
   @ApiOperation({ summary: 'Employee create' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Post()
@@ -50,6 +51,7 @@ export class EmployeeController {
   }
 
   @ApiOperation({ summary: 'Employee delete by ID' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Delete(':id')
@@ -58,6 +60,7 @@ export class EmployeeController {
   }
 
   @ApiOperation({ summary: 'Employee update by ID' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Put(':id')
@@ -66,6 +69,7 @@ export class EmployeeController {
   }
 
   @ApiOperation({ summary: 'Employee filter by comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('day/:day')
@@ -76,6 +80,7 @@ export class EmployeeController {
   }
 
   @ApiOperation({ summary: 'Employee filter by comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('week/:day')
@@ -86,6 +91,7 @@ export class EmployeeController {
   }
 
   @ApiOperation({ summary: 'Employee filter by comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('month/:month')
@@ -96,6 +102,7 @@ export class EmployeeController {
   }
 
   @ApiOperation({ summary: 'Employee filter by comment view all' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Get('year/:year')
