@@ -15,7 +15,7 @@ const start = async () => {
     const app = await NestFactory.create(AppModule, { cors: true });
 
     // Nginx/reverse proxy orqasida haqiqiy client IP olish uchun
-    app.set('trust proxy', 1);
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
     const nodeEnv = process.env.NODE_ENV || 'development';
     const isProd = nodeEnv === 'production';
