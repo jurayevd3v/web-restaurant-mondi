@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -20,6 +21,8 @@ const REFRESH_COOKIE_MAX_AGE = 15 * 24 * 60 * 60 * 1000; // 15 kun
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger('AdminAuth');
+
   constructor(
     @InjectModel(Admin) private repo: typeof Admin,
     @InjectModel(Background) private BackgroundRepo: typeof Background,
@@ -27,9 +30,12 @@ export class AdminService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async create(createDto: AdminCreateDto, res: Response) {
+  async create(createDto: AdminCreateDto, res: Response, ip: string) {
     const user = await this.repo.findOne({ where: { phone: createDto.phone } });
     if (user) {
+      this.logger.warn(
+        `Admin CREATE FAILED (phone exists) - phone: ${createDto.phone} - ip: ${ip}`,
+      );
       throw new BadRequestException('Phone number already exists!');
     }
 
@@ -59,6 +65,10 @@ export class AdminService {
 
     this.setRefreshCookie(res, tokens.refresh_token);
 
+    this.logger.log(
+      `Admin CREATED - id: ${newConfirmAdmin.id} - phone: ${createDto.phone} - role: ADMIN - ip: ${ip}`,
+    );
+
     return {
       message: 'Admin created',
       admin: updatedAdmin[1][0],
@@ -66,15 +76,22 @@ export class AdminService {
     };
   }
 
-  async login(loginDto: AdminLoginDto, res: Response) {
+  async login(loginDto: AdminLoginDto, res: Response, ip: string) {
     const { phone, password } = loginDto;
     const admin = await this.repo.findOne({ where: { phone } });
+
     if (!admin) {
+      this.logger.warn(
+        `Login FAILED (no such admin) - phone: ${phone} - ip: ${ip}`,
+      );
       throw new UnauthorizedException('Admin not created');
     }
 
     const isMatchPass = await bcrypt.compare(password, admin.hashed_password);
     if (!isMatchPass) {
+      this.logger.warn(
+        `Login FAILED (wrong password) - id: ${admin.id} - phone: ${phone} - ip: ${ip}`,
+      );
       throw new UnauthorizedException('Password error');
     }
 
@@ -90,6 +107,10 @@ export class AdminService {
     );
 
     this.setRefreshCookie(res, tokens.refresh_token);
+
+    this.logger.log(
+      `Login SUCCESS - id: ${admin.id} - phone: ${phone} - role: ${admin.role} - ip: ${ip}`,
+    );
 
     const background = await this.BackgroundRepo.findAll({
       include: { all: true },
@@ -123,17 +144,21 @@ export class AdminService {
     };
   }
 
-  async logout(refreshToken: string, res: Response) {
+  async logout(refreshToken: string, res: Response, ip: string) {
     let user: any;
     try {
       user = this.jwtService.verify(refreshToken, {
         secret: process.env.REFRESH_TOKEN_KEY,
       });
     } catch (error) {
+      this.logger.warn(`Logout FAILED (invalid token) - ip: ${ip}`);
       throw new ForbiddenException('Invalid token');
     }
 
     if (user.type !== 'refresh') {
+      this.logger.warn(
+        `Logout FAILED (wrong token type) - id: ${user.id} - ip: ${ip}`,
+      );
       throw new ForbiddenException('Invalid token type');
     }
 
@@ -143,6 +168,8 @@ export class AdminService {
     );
 
     res.clearCookie('refresh_token');
+
+    this.logger.log(`Logout - id: ${user.id} - ip: ${ip}`);
 
     return {
       message: 'Admin logged out',
@@ -168,26 +195,43 @@ export class AdminService {
     return { message: 'Admin updated', admin };
   }
 
-  async refreshToken(admin_id: number, refreshToken: string, res: Response) {
+  async refreshToken(
+    admin_id: number,
+    refreshToken: string,
+    res: Response,
+    ip: string,
+  ) {
     let decodedToken: any;
     try {
       decodedToken = this.jwtService.verify(refreshToken, {
         secret: process.env.REFRESH_TOKEN_KEY,
       });
     } catch (error) {
+      this.logger.warn(
+        `Refresh FAILED (invalid token) - admin_id: ${admin_id} - ip: ${ip}`,
+      );
       throw new ForbiddenException('Invalid token');
     }
 
     if (decodedToken.type !== 'refresh') {
+      this.logger.warn(
+        `Refresh FAILED (wrong token type) - admin_id: ${admin_id} - ip: ${ip}`,
+      );
       throw new ForbiddenException('Invalid token type');
     }
 
     if (admin_id != decodedToken.id) {
+      this.logger.warn(
+        `Refresh FAILED (id mismatch) - claimed: ${admin_id} - token: ${decodedToken.id} - ip: ${ip}`,
+      );
       throw new BadRequestException('Admin not found!');
     }
 
     const admin = await this.repo.findOne({ where: { id: admin_id } });
     if (!admin || !admin.hashed_refresh_token) {
+      this.logger.warn(
+        `Refresh FAILED (no admin/token) - admin_id: ${admin_id} - ip: ${ip}`,
+      );
       throw new BadRequestException('Admin not found!');
     }
 
@@ -196,6 +240,9 @@ export class AdminService {
       admin.hashed_refresh_token,
     );
     if (!tokenMatch) {
+      this.logger.warn(
+        `Refresh FAILED (token mismatch, possible reuse) - admin_id: ${admin_id} - ip: ${ip}`,
+      );
       throw new ForbiddenException('Forbidden');
     }
 
@@ -211,6 +258,8 @@ export class AdminService {
     );
 
     this.setRefreshCookie(res, tokens.refresh_token);
+
+    this.logger.log(`Token refreshed - id: ${admin.id} - ip: ${ip}`);
 
     return {
       message: 'Admin logged in',

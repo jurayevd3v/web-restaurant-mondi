@@ -14,10 +14,12 @@ const start = async () => {
   try {
     const app = await NestFactory.create(AppModule, { cors: true });
 
+    // Nginx/reverse proxy orqasida haqiqiy client IP olish uchun
+    app.set('trust proxy', 1);
+
     const nodeEnv = process.env.NODE_ENV || 'development';
     const isProd = nodeEnv === 'production';
 
-    // .env: ALLOWED_ORIGINS=https://example.uz,https://admin.example.uz
     const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
       .split(',')
       .map((o) => o.trim())
@@ -25,6 +27,7 @@ const start = async () => {
 
     const corsLogger = new Logger('CORS');
     const appLogger = new Logger('Bootstrap');
+    const reqLogger = new Logger('HTTP');
 
     appLogger.log(`Allowed origins: ${JSON.stringify(allowedOrigins)}`);
 
@@ -36,12 +39,10 @@ const start = async () => {
           callback(null, true);
           return;
         }
-
         if (!isProd && allowedOrigins.length === 0) {
           callback(null, true);
           return;
         }
-
         if (allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
@@ -65,19 +66,25 @@ const start = async () => {
         transform: true,
       }),
     );
+
+    // To'liq HTTP so'rov logi: IP, method, url, status, vaqt, user-agent
     app.use((req, res, next) => {
       const startTime = Date.now();
+      const ip =
+        (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+        req.socket.remoteAddress ||
+        req.ip;
+      const userAgent = req.headers['user-agent'] || '-';
+
       res.on('finish', () => {
-        const endTime = Date.now();
-        const responseTime = endTime - startTime;
-        console.log(
-          `${req.method} ${req.originalUrl} ${res.statusCode}, ${responseTime}ms`,
+        const responseTime = Date.now() - startTime;
+        reqLogger.log(
+          `${ip} - ${req.method} ${req.originalUrl} ${res.statusCode} ${responseTime}ms - "${userAgent}"`,
         );
       });
       next();
     });
 
-    // === SWAGGER: faqat production emasda ochiq ===
     if (!isProd) {
       const config = new DocumentBuilder()
         .setTitle('Darxon API')
@@ -85,12 +92,8 @@ const start = async () => {
         .setVersion('0.0.1')
         .addBearerAuth()
         .addApiKey(
-          {
-            type: 'apiKey',
-            name: 'x-admin-secret',
-            in: 'header',
-          },
-          'admin-secret', // shu nom bilan controllerda ishlatamiz
+          { type: 'apiKey', name: 'x-admin-secret', in: 'header' },
+          'admin-secret',
         )
         .build();
 
@@ -101,7 +104,6 @@ const start = async () => {
       );
     }
 
-    // Serverni ishga tushirish
     await app.listen(PORT);
     appLogger.log(`Application is running on: http://localhost:${PORT}/api`);
   } catch (error) {
