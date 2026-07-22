@@ -15,7 +15,9 @@ import { ADminUpdateDto } from './dto/admin-update.dto';
 import { Background } from 'src/background/models/background.model';
 import { Category } from 'src/category/models/category.model';
 
-let newAdmin: any;
+const BCRYPT_ROUNDS = 10;
+const REFRESH_COOKIE_MAX_AGE = 15 * 24 * 60 * 60 * 1000; // 15 kun
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -31,39 +33,37 @@ export class AdminService {
       throw new BadRequestException('Phone number already exists!');
     }
 
-    const hashed_password = await bcrypt.hash(createDto.password, 7);
-    newAdmin = {
+    const hashed_password = await bcrypt.hash(
+      createDto.password,
+      BCRYPT_ROUNDS,
+    );
+
+    const newAdmin = {
       ...createDto,
-      hashed_password: hashed_password,
+      hashed_password,
       role: 'ADMIN',
     };
 
-    const newConfirmAdmin = await this.repo.create({
-      ...newAdmin,
-    });
+    const newConfirmAdmin = await this.repo.create({ ...newAdmin });
 
     const tokens = await this.getTokens(newConfirmAdmin);
-
-    const hashed_refresh_token = await bcrypt.hash(tokens.refresh_token, 7);
+    const hashed_refresh_token = await bcrypt.hash(
+      tokens.refresh_token,
+      BCRYPT_ROUNDS,
+    );
 
     const updatedAdmin = await this.repo.update(
-      {
-        hashed_refresh_token: hashed_refresh_token,
-      },
+      { hashed_refresh_token },
       { where: { id: newConfirmAdmin.id }, returning: true },
     );
 
-    res.cookie('refresh_token', tokens.refresh_token, {
-      maxAge: 15 * 42 * 60 * 60 * 1000,
-      httpOnly: true,
-    });
+    this.setRefreshCookie(res, tokens.refresh_token);
 
-    const response = {
+    return {
       message: 'Admin created',
       admin: updatedAdmin[1][0],
       tokens,
     };
-    return response;
   }
 
   async login(loginDto: AdminLoginDto, res: Response) {
@@ -72,23 +72,24 @@ export class AdminService {
     if (!admin) {
       throw new UnauthorizedException('Admin not created');
     }
+
     const isMatchPass = await bcrypt.compare(password, admin.hashed_password);
     if (!isMatchPass) {
       throw new UnauthorizedException('Password error');
     }
-    const tokens = await this.getTokens(admin);
 
-    const hashed_refresh_token = await bcrypt.hash(tokens.refresh_token, 7);
+    const tokens = await this.getTokens(admin);
+    const hashed_refresh_token = await bcrypt.hash(
+      tokens.refresh_token,
+      BCRYPT_ROUNDS,
+    );
 
     const updatedAdmin = await this.repo.update(
-      { hashed_refresh_token: hashed_refresh_token },
+      { hashed_refresh_token },
       { where: { id: admin.id }, returning: true },
     );
 
-    res.cookie('refresh_token', tokens.refresh_token, {
-      maxAge: 15 * 42 * 60 * 60 * 1000,
-      httpOnly: true,
-    });
+    this.setRefreshCookie(res, tokens.refresh_token);
 
     const background = await this.BackgroundRepo.findAll({
       include: { all: true },
@@ -100,94 +101,96 @@ export class AdminService {
     function sortWithZeroAtEnd(a, b) {
       const sortA = a.sort !== undefined ? a.sort : 0;
       const sortB = b.sort !== undefined ? b.sort : 0;
-
-      if (sortA === 0 && sortB === 0) {
-        return 0;
-      } else if (sortA === 0) {
-        return 1;
-      } else if (sortB === 0) {
-        return -1;
-      } else {
-        return sortA - sortB;
-      }
+      if (sortA === 0 && sortB === 0) return 0;
+      if (sortA === 0) return 1;
+      if (sortB === 0) return -1;
+      return sortA - sortB;
     }
 
-    // Sort categories
     categories.sort(sortWithZeroAtEnd);
-
-    // Sort each category's menu
     categories.forEach((category) => {
       if (category.menu && Array.isArray(category.menu)) {
         category.menu.sort(sortWithZeroAtEnd);
       }
     });
 
-    const response = {
+    return {
       message: 'Admin logged in',
       admin: updatedAdmin[1][0],
       tokens,
-      background: background,
+      background,
       category: categories,
     };
-    return response;
   }
 
   async logout(refreshToken: string, res: Response) {
-    const user = await this.jwtService.verify(refreshToken, {
-      secret: process.env.REFRESH_TOKEN_KEY,
-    });
-    if (!user) {
-      throw new ForbiddenException('Admin not found');
+    let user: any;
+    try {
+      user = this.jwtService.verify(refreshToken, {
+        secret: process.env.REFRESH_TOKEN_KEY,
+      });
+    } catch (error) {
+      throw new ForbiddenException('Invalid token');
     }
+
+    if (user.type !== 'refresh') {
+      throw new ForbiddenException('Invalid token type');
+    }
+
     const updatedAdmin = await this.repo.update(
       { hashed_refresh_token: null },
       { where: { id: user.id }, returning: true },
     );
+
     res.clearCookie('refresh_token');
-    const response = {
+
+    return {
       message: 'Admin logged out',
       user: updatedAdmin[1][0],
     };
-    return response;
   }
 
   async getAll() {
-    const admin = await this.repo.findAll({ include: { all: true } });
-    return admin;
+    return this.repo.findAll({ include: { all: true } });
   }
 
   async getOne(id: number): Promise<Admin> {
-    const admin = await this.repo.findByPk(id);
-    return admin;
+    return this.repo.findByPk(id);
   }
 
   async delete(id: number) {
     await this.repo.destroy({ where: { id } });
-    return {
-      message: 'Admin delete',
-    };
+    return { message: 'Admin delete' };
   }
 
   async update(id: number, updateDto: ADminUpdateDto) {
-    const admin = await this.repo.update(updateDto, {
-      where: { id },
-    });
-
-    return {
-      message: 'Admin updated',
-      admin: admin,
-    };
+    const admin = await this.repo.update(updateDto, { where: { id } });
+    return { message: 'Admin updated', admin };
   }
 
   async refreshToken(admin_id: number, refreshToken: string, res: Response) {
-    const decodedToken = this.jwtService.decode(refreshToken);
-    if (admin_id != decodedToken['id']) {
+    let decodedToken: any;
+    try {
+      decodedToken = this.jwtService.verify(refreshToken, {
+        secret: process.env.REFRESH_TOKEN_KEY,
+      });
+    } catch (error) {
+      throw new ForbiddenException('Invalid token');
+    }
+
+    if (decodedToken.type !== 'refresh') {
+      throw new ForbiddenException('Invalid token type');
+    }
+
+    if (admin_id != decodedToken.id) {
       throw new BadRequestException('Admin not found!');
     }
+
     const admin = await this.repo.findOne({ where: { id: admin_id } });
     if (!admin || !admin.hashed_refresh_token) {
       throw new BadRequestException('Admin not found!');
     }
+
     const tokenMatch = await bcrypt.compare(
       refreshToken,
       admin.hashed_refresh_token,
@@ -197,46 +200,61 @@ export class AdminService {
     }
 
     const tokens = await this.getTokens(admin);
-
-    const hashed_refresh_token = await bcrypt.hash(tokens.refresh_token, 7);
+    const hashed_refresh_token = await bcrypt.hash(
+      tokens.refresh_token,
+      BCRYPT_ROUNDS,
+    );
 
     const updatedAdmin = await this.repo.update(
-      { hashed_refresh_token: hashed_refresh_token },
+      { hashed_refresh_token },
       { where: { id: admin.id }, returning: true },
     );
 
-    res.cookie('refresh_token', tokens.refresh_token, {
-      maxAge: 15 * 42 * 60 * 60 * 1000,
-      httpOnly: true,
-    });
+    this.setRefreshCookie(res, tokens.refresh_token);
 
-    const response = {
+    return {
       message: 'Admin logged in',
       admin: updatedAdmin[1][0],
       tokens,
     };
-    return response;
   }
 
   async getTokens(admin: Admin) {
-    const jwtPayload = {
+    const basePayload = {
       id: admin.id,
       phone: admin.phone,
       role: admin.role,
     };
+
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(jwtPayload, {
-        secret: process.env.ACCESS_TOKEN_KEY,
-        expiresIn: process.env.ACCESS_TOKEN_TIME,
-      }),
-      this.jwtService.signAsync(jwtPayload, {
-        secret: process.env.REFRESH_TOKEN_KEY,
-        expiresIn: process.env.REFRESH_TOKEN_TIME,
-      }),
+      this.jwtService.signAsync(
+        { ...basePayload, type: 'access' },
+        {
+          secret: process.env.ACCESS_TOKEN_KEY,
+          expiresIn: process.env.ACCESS_TOKEN_TIME,
+        },
+      ),
+      this.jwtService.signAsync(
+        { ...basePayload, type: 'refresh' },
+        {
+          secret: process.env.REFRESH_TOKEN_KEY,
+          expiresIn: process.env.REFRESH_TOKEN_TIME,
+        },
+      ),
     ]);
+
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
     };
+  }
+
+  private setRefreshCookie(res: Response, refreshToken: string) {
+    res.cookie('refresh_token', refreshToken, {
+      maxAge: REFRESH_COOKIE_MAX_AGE,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
   }
 }

@@ -16,6 +16,7 @@ export class RolesGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
   ) {}
+
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
@@ -45,17 +46,26 @@ export class RolesGuard implements CanActivate {
         message: 'The user is not authorized',
       });
     }
+
     let user: any;
     try {
       user = this.jwtService.verify(token, {
-        secret: process.env.REFRESH_TOKEN_KEY,
+        secret: process.env.ACCESS_TOKEN_KEY,
       });
     } catch (error) {
       throw new UnauthorizedException({
         message: 'The user is not authorized',
       });
     }
+
+    if (user.type !== 'access') {
+      throw new UnauthorizedException({
+        message: 'Invalid token type',
+      });
+    }
+
     req.user = user;
+
     for (let i in requiredRoles) {
       if (user.role == requiredRoles[i]) {
         return true;

@@ -8,6 +8,7 @@ import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 
 const start = async () => {
   try {
@@ -26,6 +27,8 @@ const start = async () => {
     const appLogger = new Logger('Bootstrap');
 
     appLogger.log(`Allowed origins: ${JSON.stringify(allowedOrigins)}`);
+
+    app.use(helmet());
 
     app.enableCors({
       origin: (origin, callback) => {
@@ -55,7 +58,13 @@ const start = async () => {
 
     app.use(cookieParser());
     app.setGlobalPrefix('api');
-    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
     app.use((req, res, next) => {
       const startTime = Date.now();
       res.on('finish', () => {
@@ -68,31 +77,33 @@ const start = async () => {
       next();
     });
 
-    // === SWAGGER: har doim ochiq ===
-    const config = new DocumentBuilder()
-      .setTitle('Darxon API')
-      .setDescription('The Darxon API documentation')
-      .setVersion('0.0.1')
-      .addBearerAuth()
-      .addApiKey(
-        {
-          type: 'apiKey',
-          name: 'x-admin-secret',
-          in: 'header',
-        },
-        'admin-secret', // shu nom bilan controllerda ishlatamiz
-      )
-      .build();
+    // === SWAGGER: faqat production emasda ochiq ===
+    if (!isProd) {
+      const config = new DocumentBuilder()
+        .setTitle('Darxon API')
+        .setDescription('The Darxon API documentation')
+        .setVersion('0.0.1')
+        .addBearerAuth()
+        .addApiKey(
+          {
+            type: 'apiKey',
+            name: 'x-admin-secret',
+            in: 'header',
+          },
+          'admin-secret', // shu nom bilan controllerda ishlatamiz
+        )
+        .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+      const document = SwaggerModule.createDocument(app, config);
+      SwaggerModule.setup('api/docs', app, document);
+      appLogger.log(
+        `Swagger documentation available at: http://localhost:${PORT}/api/docs`,
+      );
+    }
 
     // Serverni ishga tushirish
     await app.listen(PORT);
     appLogger.log(`Application is running on: http://localhost:${PORT}/api`);
-    appLogger.log(
-      `Swagger documentation available at: http://localhost:${PORT}/api/docs`,
-    );
   } catch (error) {
     console.error('Error starting server:', error);
     process.exit(1);
